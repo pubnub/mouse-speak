@@ -38,15 +38,37 @@ var db     = this['localStorage'],
     }
 };
 
-var bind        = PUBNUB.bind
-,   css         = PUBNUB.css
-,   body        = PUBNUB.search('body')[0]
+
+var _css = function(node, css){
+   $(node).css(css);
+}
+
+var _bind = function(eventn,node, cb){
+  $(node).on(eventn,cb);
+}
+
+var createTextbox = function(){
+   return document.createElement("input");
+}
+
+var publishCallback = function(status, message){
+  console.log("published message callback: " + JSON.stringify(status)
+                                             + "\n"
+                                             + "message: "
+                                             + JSON.stringify(message));
+}
+
+//163222,
+
+var bind        = _bind
+,   css         = _css
+,   body        = document.getElementsByTagName("body")[0]
 ,   doc         = document.documentElement
 ,   now         = function(){return+new Date}
 ,   mice        = {}
 ,   channel     = 'mouse-speakv0.26'
 ,   mousefade   = 9000 // Time before user is considered Inactive
-,   textbox     = PUBNUB.create('input')
+,   textbox     = createTextbox()
 ,   focused     = 0    // Focused on Textbox?
 ,   lastpos     = []   // Last Sent Position
 ,   lasttxt     = ''   // Last Sent Text
@@ -75,7 +97,7 @@ var Sprite = {
 
         sprite.opacity = sprite.opacity || 1.0;
 
-        PUBNUB.css( sprite.node, {
+        css( sprite.node, {
             opacity : sprite.opacity,
             position : 'absolute',
             top : sprite.top,
@@ -92,7 +114,7 @@ var Sprite = {
         return sprite;
     },
 
-    ground : PUBNUB.search('body')[0],
+    ground : document.getElementsByTagName('body')[0],
     append : function(node) {
         Sprite.ground.appendChild(node);
     },
@@ -104,11 +126,11 @@ var Sprite = {
         if (typeof offset.left == 'number')
             sprite.image.offset.left = offset.left;
 
-        PUBNUB.css( sprite.node, {
+        css( sprite.node, {
             backgroundPosition : '-' +
                 (sprite.cell.size * cell + sprite.image.offset.left) +
                 'px -' + sprite.image.offset.top + 'px'
-        } );
+        });
     },
 
     /**
@@ -197,7 +219,7 @@ var Sprite = {
 
         Sprite.stop_all(sprite);
 
-        PUBNUB.each( properties, function( property, value ) {
+        _.each( properties, function( property, value ) {
             var current_time = start_time
             ,   end_time     = start_time + duration
             ,   start_prop   = sprite[property] || 0
@@ -217,7 +239,7 @@ var Sprite = {
                 );
 
                 update[property] = sprite[property];
-                PUBNUB.css( sprite.node, update );
+                css( sprite.node, update );
 
                 if ( end_time <= current_time && sprite.intervals.move ) {
                     Sprite.stop_move( sprite, ikey );
@@ -233,7 +255,7 @@ var Sprite = {
      */
     stop_all : function(sprite) {
         clearTimeout(sprite.intervals.animate);
-        PUBNUB.each( sprite.intervals.move, function( ikey ) {
+        _.each( sprite.intervals.move, function( ikey ) {
             clearInterval(sprite.intervals.move[ikey]);
         } );
     },
@@ -269,7 +291,7 @@ function get_pos(e) {
     ,   tchp = 0;
 
     if (tch) {
-        PUBNUB.each( e.touches, function(touch) {
+        _.each( e.touches, function(touch) {
             posx = touch.pageX;
             posy = touch.pageY;
 
@@ -371,10 +393,10 @@ function send(e) {
     // Set so we won't get jittery mice.
     msg['c'] = (mice[uuid].last||1) + 2;
 
-    PUBNUB.publish({
+    pubnub.publish({
         channel : channel,
         message : msg
-    });
+    }, publishCallback);
 
     msg['force'] = 1;
     user_updated(msg);
@@ -415,7 +437,7 @@ function user_joined(message) {
     } );
 
     // Set Prettier Text
-    PUBNUB.css( mouse.node, {
+    css( mouse.node, {
         'fontWeight' : 'bold',
         'padding'    : '5px 0 0 20px',
         'fontSize'   : '30px',
@@ -424,7 +446,8 @@ function user_joined(message) {
     } );
 
     // Save UUID
-    PUBNUB.attr( mouse.node, 'uuid', message['uuid'] );
+    //PUBNUB.attr( mouse.node, 'uuid', message['uuid'] );
+    $(mouse.node).attr('uuid',message['uuid']);
 
     // Save User
     mice[message['uuid']] = mouse;
@@ -468,15 +491,15 @@ function user_updated(message) {
     // Set Delay to Fade User Out on No Activity.
     mouse.timerfade && clearTimeout(mouse.timerfade);
     mouse.timerfade = setTimeout( function() {
-        PUBNUB.css( mouse.node, { 'opacity' : 0.4 } );
+        css( mouse.node, { 'opacity' : 0.4 } );
         clearTimeout(mouse.timerfade);
         mouse.timerfade = setTimeout( function() {
-            PUBNUB.css( mouse.node, { 'display' : 'none' } );
+            css( mouse.node, { 'display' : 'none' } );
         }, mousefade );
     }, mousefade );
 
     // Reshow if hidden.
-    PUBNUB.css( mouse.node, {
+    css( mouse.node, {
         'display' : 'block',
         'opacity' : 1.0
     } );
@@ -497,7 +520,13 @@ function user_updated(message) {
 }
 
 // Receive Mice Friends
-PUBNUB.subscribe( { channel : channel }, user_updated );
+pubnub.addListener({
+  message: function(m){
+    user_updated(m.message);
+  }
+});
+
+pubnub.subscribe( { channels : [channel], withPresence: false });
 
 // Capture Text Journey
 function keystroke( e, key ) {setTimeout(function(){
@@ -534,7 +563,7 @@ function get_txt() {
 }
 
 // Add Input Textbox
-PUBNUB.css( textbox, {
+css( textbox, {
     'position' : 'absolute',
     'top'      : -40,
     'left'     : 0
@@ -551,14 +580,16 @@ bind( 'touchend',   document, send );
 bind( 'keydown',    document, monopuff );
 
 // Setup For Any Input Event.
-PUBNUB.each( PUBNUB.search('input'), function(input) {
+_.each( document.getElementsByTagName('input'), function(input) {
     bind( 'focus', input, focusize );
 } );
 
 // Load UUID and Send First Message
-if (!uuid) PUBNUB.uuid(function(id){
-    // Get UUID
-    uuid = id;
-});
+if (!uuid){
+  uuid = PubNub.generateUUID();
+}
+
+
+
 
 })()
