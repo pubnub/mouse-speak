@@ -48,7 +48,13 @@ var _bind = function(eventn,node, cb){
 }
 
 var createTextbox = function(){
-   return document.createElement("input");
+   tb = document.createElement("input");
+   $(tb).attr("id","messageSend");
+   _css(tb, {
+     background: "#e6e6e6"
+   });
+
+   return tb;
 }
 
 var publishCallback = function(status, message){
@@ -93,7 +99,7 @@ var Sprite = {
         };
 
         sprite.cell.size = Math.floor(sprite.image.width / sprite.cell.count);
-        sprite.node = PUBNUB.create('div');
+        sprite.node = document.createElement('div');
 
         sprite.opacity = sprite.opacity || 1.0;
 
