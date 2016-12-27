@@ -1,0 +1,28 @@
+{
+  "name": "mouse-speak",
+  "homepage": "https://github.com/frederickbrock/mouse-speak",
+  "authors": [
+    "Frederick Brock <fred@pubnub.com>"
+  ],
+  "description": "Mouse speak",
+  "main": "mousespeak.html",
+  "keywords": [
+    "pubnub",
+    "realtime",
+    "real-time"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "pubnub": "^4.3.3",
+    "jquery": "^3.1.1",
+    "underscore": "^1.8.3"
+  }
+}

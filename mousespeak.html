@@ -1,0 +1,19 @@
+<!doctype html>
+<head>
+    <title>PubNub - Mouse Speak</title>
+</head>
+<body style="width:306;height:198px;">
+    <script src="bower_components/pubnub/dist/web/pubnub.js"></script>
+    <script src="bower_components/underscore/underscore.js"></script>
+    <script src="bower_components/jquery/dist/jquery.slim.min.js"></script>
+    <script type="text/javascript">
+        var pubnub = new PubNub({
+          subscribeKey: "demo"
+          ,publishKey: "demo"
+          ,secure:true
+        });
+    </script>
+
+    <script src="/mousespeak.js"></script>
+</body>
+</html>
