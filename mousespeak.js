@@ -22,6 +22,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+
 var db     = this['localStorage'],
     cookie = {
     get : function(key) {
@@ -39,18 +40,11 @@ var db     = this['localStorage'],
 };
 
 
-var _css = function(node, css){
-   $(node).css(css);
-}
-
-var _bind = function(eventn,node, cb){
-  $(node).on(eventn,cb);
-}
 
 var createTextbox = function(){
    tb = document.createElement("input");
    $(tb).attr("id","messageSend");
-   _css(tb, {
+   $(tb).css( {
      background: "#e6e6e6"
    });
 
@@ -58,19 +52,19 @@ var createTextbox = function(){
 }
 
 var publishCallback = function(status, message){
-  console.log("published message callback: " + JSON.stringify(status)
+/*  console.log("published message callback: " + JSON.stringify(status)
                                              + "\n"
                                              + "message: "
-                                             + JSON.stringify(message));
+                                             + JSON.stringify(message)); */
 }
 
 //163222,
 
-var bind        = _bind
-,   css         = _css
-,   body        = document.getElementsByTagName("body")[0]
-,   doc         = document.documentElement
-,   now         = function(){return+new Date}
+var bind        =  function(eventn,node, cb){$(node).on(eventn,cb);}
+,   css         =  function(node, css){$(node).css(css);}
+,   body        =  document.getElementsByTagName("body")[0]
+,   doc         =  document.documentElement
+,   now         =  function(){return(new Date()); }
 ,   mice        = {}
 ,   channel     = 'mouse-speakv0.26'
 ,   mousefade   = 9000 // Time before user is considered Inactive
@@ -94,7 +88,7 @@ var Sprite = {
      */
     create : function(sprite) {
         sprite.intervals = {
-            animate : 0,
+            animate : 1,
             move    : {}
         };
 
@@ -222,10 +216,11 @@ var Sprite = {
      */
     move : function( sprite, properties, duration, callback ) {
         var start_time   = now();
+        console.log("inside sprite move");
+                Sprite.stop_all(sprite);
 
-        Sprite.stop_all(sprite);
-
-        _.each( properties, function( property, value ) {
+        _.each( properties, function(value,property) {
+            console.log("iterating property: " + property + ", " + value);
             var current_time = start_time
             ,   end_time     = start_time + duration
             ,   start_prop   = sprite[property] || 0
@@ -412,10 +407,12 @@ function send(e) {
 
 // User Joined
 function user_joined(message) {
+    console.log("a user has joined");
     var pos   = message['pos'] || [100,100]
     ,   mouse = Sprite.create({
         image : {
-            url : '/static/images/mousespeak-cursor.png',
+            // url : '/static/images/mousespeak-cursor.png',
+            url : '/static/cursor.png',
             width : 260,
             height : 30,
             offset : {
@@ -464,6 +461,7 @@ function user_joined(message) {
 
 // User has Moved Mouse or Typed
 function user_updated(message) {
+    console.log("message received in user_updated:\n" + JSON.stringify(message) + "\n");
     var pos   = message['pos']
     ,   txt   = message['txt']
     ,   last  = message['c']
@@ -471,22 +469,33 @@ function user_updated(message) {
     ,   tuuid = message['uuid']
     ,   mouse = mice[tuuid];
 
-    if (!mouse) return user_joined(message);
+
+
+
+    if (!mouse) {
+      return user_joined(message);
+    }
 
     // Common to reset value if page reloaded
     if (last && (mouse.last||0) - last > 100)
         mouse.last = last;
 
     // Self
-    ///if (force) mouse.last = last;
-
+    if (force){
+      mouse.last = last;
+      console.log("force move");
+    }
     // Prevent Jitter from Early Publish
-    if (
-        !force            &&
-        last              &&
-        mouse.last        &&
+
+    console.log("");
+    if (!force     &&
+        last       &&
+        mouse.last &&
         mouse.last > last
-    ) return;
+    ){
+      console.log("jitter?");
+      return;
+    }
 
     // Set last for the future.
     if (last) mouse.last = last;
@@ -499,6 +508,7 @@ function user_updated(message) {
     mouse.timerfade = setTimeout( function() {
         css( mouse.node, { 'opacity' : 0.4 } );
         clearTimeout(mouse.timerfade);
+
         mouse.timerfade = setTimeout( function() {
             css( mouse.node, { 'display' : 'none' } );
         }, mousefade );
@@ -512,6 +522,7 @@ function user_updated(message) {
 
     // Move Player.
     if (pos) {
+        console.log("pos");
         Sprite.move( mouse, {
             'top'  : pos[1],
             'left' : pos[0]
@@ -529,10 +540,15 @@ function user_updated(message) {
 pubnub.addListener({
   message: function(m){
     user_updated(m.message);
+  },
+  presence: function(m){
+    console.log("presence message: " + JSON.stringify(m));
   }
+
 });
 
-pubnub.subscribe( { channels : [channel], withPresence: false });
+console.log("subscribing to channel: " + channel);
+pubnub.subscribe( { channels : [channel], withPresence: true });
 
 // Capture Text Journey
 function keystroke( e, key ) {setTimeout(function(){
