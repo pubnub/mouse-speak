@@ -74,7 +74,7 @@ var bind        =  function(eventn,node, cb){$(node).on(eventn,cb);}
 ,   lasttxt     = ''   // Last Sent Text
 ,   sentcnt     = 0    // Number of Messages Sent
 ,   uuid        = 0    // User Identification
-,   wait        = 100  // Publish Rate Limit (Time Between Data Push)
+,   wait        = 1000  // Publish Rate Limit (Time Between Data Push)
 ,   maxmsg      = 34   // Max Message Length
 ,   moffset     = 10   // Offset of Mouse Position
 ,   timed       = 0    // Timeout for Publish Limiter
@@ -392,7 +392,7 @@ function send(e) {
     if (!(msg['txt'] || msg['pos'])) return 1;
 
     // Set so we won't get jittery mice.
-    msg['c'] = (mice[uuid].last||1) + 2;
+    msg['c'] = (mice[uuid].last||1) + 400;
 
     pubnub.publish({
         channel : channel,
@@ -487,7 +487,6 @@ function user_updated(message) {
     }
     // Prevent Jitter from Early Publish
 
-    console.log("");
     if (!force     &&
         last       &&
         mouse.last &&
