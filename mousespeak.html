@@ -1,0 +1,19 @@
+<!doctype html>
+<head>
+    <title>PubNub - Mouse Speak</title>
+</head>
+<body style="width:306;height:198px;">
+    <script src="bower_components/pubnub/dist/web/pubnub.js"></script>
+    <script src="bower_components/underscore/underscore.js"></script>
+    <script src="bower_components/jquery/dist/jquery.slim.min.js"></script>
+    <script type="text/javascript">
+        var pubnub = new PubNub({
+          subscribeKey: "sub-c-b0d03be2-cc6f-11e6-add0-02ee2ddab7fe"
+          ,publishKey: "pub-c-d203286b-cbd3-4d72-b491-92e95f88e329"
+          ,secure:true
+        });
+    </script>
+
+    <script src="/mousespeak.js"></script>
+</body>
+</html>
