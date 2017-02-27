@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PubNub Mouse Speak</title>
+    <style type="text/css">
+        .fill {
+            position: absolute;
+            top:0; bottom:0;left:0;right:0;
+        }
+        .vbox {
+            display: flex;
+            flex-direction: column;
+        }
+        .hbox {
+            display: flex;
+            flex-direction: row;
+            font-size: 200%;
+            font-family: sans-serif;
+        }
+        .hbox input {
+            flex: 1;
+        }
+
+        #sprite-container {
+            border: 1px solid blue;
+            flex: 1;
+        }
+
+        .sprite {
+            min-width: 50px;
+            min-height: 50px;
+            border: 1px solid red;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+
+<div class="vbox fill">
+    <div class="hbox">
+        <label>text </label>
+        <input type="text" id="messageSend" value="my status message"/>
+    </div>
+    <div id="sprite-container" class="grow">
+        container
+    </div>
+</div>
+
+<script src="../node_modules/pubnub/dist/web/pubnub.js"></script>
+<script type="text/javascript">
+
+    var pubnub;
+    var CHANNEL     = 'mouse-speak-1.0.0';
+    var users = {};
+
+    function Sprite() {
+        this.div = document.createElement('div');
+        this.div.innerHTML = "<b>no status yet</b>";
+        this.div.classList.add('sprite');
+        $('#sprite-container').appendChild(this.div);
+        var self = this;
+        this.setState = function(state) {
+            if(!state) return;
+            if(state.txt) this.div.innerHTML = "<b>"+state.txt+"</b>";
+            if(state.x && state.y) {
+                self.div.style.left = state.x+'px';
+                self.div.style.top = (state.y)+'px';
+            }
+        };
+        this.remove = function() {
+            this.div.parentNode.removeChild(this.div);
+        };
+    }
+
+    function $(selector) {
+        return document.querySelector(selector);
+    }
+    function on(selector, type, cb) {
+        if(typeof selector !== 'string') return selector.addEventListener(type,cb);
+        $(selector).addEventListener(type,cb);
+    }
+
+    function setText(txt) {
+        pubnub.setState({
+            channels:[CHANNEL],
+            state: {
+                txt:txt
+            }
+        });
+    }
+
+    var lastsent = 0;
+    function setPos(xy) {
+        var now = new Date().getTime();
+        if(now-lastsent < 200) return;
+        lastsent = now;
+        pubnub.setState({
+            channels:[CHANNEL],
+            state: {
+                x:xy.x,
+                y:xy.y
+            }
+        });
+    }
+
+    function updateUser(uuid,state) {
+        if(!users[uuid])  users[uuid] = new Sprite();
+        var sprite = users[uuid];
+        sprite.setState(state);
+    }
+
+    function removeUser(uuid) {
+        if(users[uuid]) {
+            users[uuid].remove();
+            delete users[uuid];
+        }
+    }
+
+    function init () {
+
+        pubnub = new PubNub({
+            publishKey: "pub-c-ebdc8fa1-bf43-413e-ae62-145316e9d0d4",
+            subscribeKey: "sub-c-8d9c98fc-fd19-11e6-ba92-02ee2ddab7fe",
+            uuid:PubNub.generateUUID(),
+            presenceTimeout:60
+        });
+        pubnub.addListener({
+            message: function(m){
+                    //                console.log("got a message from ", m.message.uuid);
+            },
+            presence: function(m){
+                if(m.action === 'join')         updateUser(m.uuid, m.state);
+                if(m.action === 'timeout')      removeUser(m.uuid, m.state);
+                if(m.action === 'state-change') updateUser(m.uuid, m.state);
+            }
+        });
+        pubnub.subscribe( { channels : [CHANNEL], withPresence: true });
+
+        pubnub.hereNow({
+            channels:[CHANNEL],
+            includeUUIDs:true,
+            includeState:true},
+                function(status, response) {
+                var info = response.channels[CHANNEL];
+                info.occupants.forEach(function(user) {
+                    updateUser(user.uuid, user.state)
+                });
+        });
+
+        on("#messageSend","keydown",function(evt) {
+            if(evt.keyCode === 13) setText($("#messageSend").value);
+        });
+        on(document,'mousemove',function(evt) {
+            var rect = evt.target.getBoundingClientRect();
+            var xy = { x: rect.left + evt.clientX, y: rect.top + evt.clientY};
+            setPos(xy);
+        });
+
+    }
+
+    window.addEventListener('load',init());
+
+</script>
+</body>
+</html>
