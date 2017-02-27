@@ -43,10 +43,11 @@ var db     = this['localStorage'],
 
 var createTextbox = function(){
    tb = document.createElement("input");
-   $(tb).attr("id","messageSend");
-   $(tb).css( {
-     background: "#e6e6e6"
-   });
+    tb.id = 'messageSend';
+   //$(tb).attr("id","messageSend");
+   //$(tb).css( {
+   //  background: "#e6e6e6"
+   //});
 
    return tb;
 }
@@ -61,7 +62,9 @@ var publishCallback = function(status, message){
 //163222,
 
 var bind        =  function(eventn,node, cb){$(node).on(eventn,cb);}
-,   css         =  function(node, css){$(node).css(css);}
+,   css         =  function(node, css){
+        Object.keys(css)
+    $(node).css(css);}
 ,   body        =  document.getElementsByTagName("body")[0]
 ,   doc         =  document.documentElement
 ,   now         =  function(){return(new Date()); }
