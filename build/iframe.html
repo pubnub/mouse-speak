@@ -49,7 +49,6 @@
 
 <script src="../node_modules/pubnub/dist/web/pubnub.js"></script>
 <script type="text/javascript">
-
     var pubnub;
     var CHANNEL     = 'mouse-speak-1.0.0';
     var users = {};
@@ -106,8 +105,7 @@
 
     function updateUser(uuid,state) {
         if(!users[uuid])  users[uuid] = new Sprite();
-        var sprite = users[uuid];
-        sprite.setState(state);
+        users[uuid].setState(state);
     }
 
     function removeUser(uuid) {
@@ -158,8 +156,7 @@
         });
 
     }
-
-    window.addEventListener('load',init());
+    on(window,'load', init);
 
 </script>
 </body>
