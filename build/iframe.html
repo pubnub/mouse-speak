@@ -96,7 +96,7 @@
     function setPos(xy) {
         updateUser(pubnub.getUUID(),{x:xy.x, y:xy.y});
         var now = new Date().getTime();
-        if(now-lastsent < 100) return;
+        if(now-lastsent < 50) return;
         lastsent = now;
         pubnub.setState({
             channels:[CHANNEL],
