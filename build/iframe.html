@@ -53,8 +53,12 @@
     var users = {};
 
     function Sprite() {
+        this.x = 100;
+        this.y = 100;
         this.div = document.createElement('div');
         this.div.innerHTML = "<b>Hello</b>";
+        this.div.style.left = this.x+'px';
+        this.div.style.top  = this.y+'px';
         this.div.classList.add('sprite');
         $('#sprite-container').appendChild(this.div);
         var self = this;
@@ -65,13 +69,38 @@
                 var bounds = $('#sprite-container').getBoundingClientRect();
                 state.x = Math.min(state.x, bounds.width-100);
                 state.y = Math.min(state.y, bounds.height-50);
-                self.div.style.left = state.x+'px';
-                self.div.style.top = (state.y)+'px';
+                self.moveTo(state.x,state.y);
             }
         };
         this.remove = function() {
             this.div.parentNode.removeChild(this.div);
         };
+        this.moveTo = function(x,y) {
+            var diffx = this.x-x;
+            var diffy = this.y-y;
+            var dirx = diffx/Math.abs(diffx);
+            var diry = diffy/Math.abs(diffy);
+            if(diffx === 0) {
+                dirx = 0;
+            }
+            if(diffy === 0) {
+                diry = 0;
+            }
+
+//            console.log("moving to " + x + " " + y + " " + diffx + " " + diffy + " ");
+
+            if(Math.abs(diffx) < 2) {
+                this.x = x;
+                this.y = y;
+            } else {
+                var self = this;
+                requestAnimationFrame(function() {
+                    self.moveTo(self.x-dirx,self.y-diry);
+                });
+            }
+            this.div.style.left = this.x+'px';
+            this.div.style.top  = this.y+'px';
+        }
     }
 
     function $(selector) {
