@@ -75,31 +75,30 @@
         this.remove = function() {
             this.div.parentNode.removeChild(this.div);
         };
-        this.moveTo = function(x,y) {
-            var diffx = this.x-x;
-            var diffy = this.y-y;
-            var dirx = diffx/Math.abs(diffx);
-            var diry = diffy/Math.abs(diffy);
-            if(diffx === 0) {
-                dirx = 0;
-            }
-            if(diffy === 0) {
-                diry = 0;
-            }
-
-//            console.log("moving to " + x + " " + y + " " + diffx + " " + diffy + " ");
-
-            if(Math.abs(diffx) < 2) {
-                this.x = x;
-                this.y = y;
+        this.update = function() {
+            var diffx = this.x-this.tx;
+            var diffy = this.y-this.ty;
+            var dist = Math.sqrt((diffx*diffx) + (diffy*diffy));
+            if(dist < 4) {
+                this.x = this.tx;
+                this.y = this.ty;
+                this.div.style.left = this.x+'px';
+                this.div.style.top  = this.y+'px';
             } else {
-                var self = this;
-                requestAnimationFrame(function() {
-                    self.moveTo(self.x-dirx,self.y-diry);
-                });
+                var speed = 4;
+                if(this.x < this.tx-speed) this.x += speed;
+                if(this.x > this.tx+speed) this.x -= speed;
+                if(this.y < this.ty-speed) this.y += speed;
+                if(this.y > this.ty+speed) this.y -= speed;
+                this.div.style.left = this.x+'px';
+                this.div.style.top  = this.y+'px';
+                requestAnimationFrame(this.update.bind(this));
             }
-            this.div.style.left = this.x+'px';
-            this.div.style.top  = this.y+'px';
+        };
+        this.moveTo = function(x,y) {
+            this.tx = x;
+            this.ty = y;
+            this.update();
         }
     }
 
