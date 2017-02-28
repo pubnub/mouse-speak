@@ -23,28 +23,27 @@
         }
 
         #sprite-container {
-            border: 1px solid blue;
+            border: 0px solid blue;
+            margin:0;
+            padding:0;
             flex: 1;
         }
 
         .sprite {
             min-width: 50px;
             min-height: 50px;
-            border: 1px solid red;
+            border: 0px solid red;
             position: absolute;
+            font-family: sans-serif;
+            color: red;
+            font-size: 200%;
+            max-width: 10em;
         }
     </style>
 </head>
 <body>
 
-<div class="vbox fill">
-    <div class="hbox">
-        <label>text </label>
-        <input type="text" id="messageSend" value="my status message"/>
-    </div>
-    <div id="sprite-container" class="grow">
-        container
-    </div>
+<div class="fill" id="sprite-container">
 </div>
 
 <script src="js/pubnub.js"></script>
@@ -55,7 +54,7 @@
 
     function Sprite() {
         this.div = document.createElement('div');
-        this.div.innerHTML = "<b>no status yet</b>";
+        this.div.innerHTML = "<b>Hello</b>";
         this.div.classList.add('sprite');
         $('#sprite-container').appendChild(this.div);
         var self = this;
@@ -63,6 +62,9 @@
             if(!state) return;
             if(state.txt) this.div.innerHTML = "<b>"+state.txt+"</b>";
             if(state.x && state.y) {
+                var bounds = $('#sprite-container').getBoundingClientRect();
+                state.x = Math.min(state.x, bounds.width-100);
+                state.y = Math.min(state.y, bounds.height-50);
                 self.div.style.left = state.x+'px';
                 self.div.style.top = (state.y)+'px';
             }
@@ -81,6 +83,7 @@
     }
 
     function setText(txt) {
+        updateUser(pubnub.getUUID(),{txt:txt});
         pubnub.setState({
             channels:[CHANNEL],
             state: {
@@ -91,8 +94,9 @@
 
     var lastsent = 0;
     function setPos(xy) {
+        updateUser(pubnub.getUUID(),{x:xy.x, y:xy.y});
         var now = new Date().getTime();
-        if(now-lastsent < 200) return;
+        if(now-lastsent < 100) return;
         lastsent = now;
         pubnub.setState({
             channels:[CHANNEL],
@@ -128,6 +132,7 @@
                     //                console.log("got a message from ", m.message.uuid);
             },
             presence: function(m){
+                if(m.uuid === pubnub.getUUID()) return; //skip self
                 if(m.action === 'join')         updateUser(m.uuid, m.state);
                 if(m.action === 'timeout')      removeUser(m.uuid, m.state);
                 if(m.action === 'state-change') updateUser(m.uuid, m.state);
@@ -146,12 +151,19 @@
                 });
         });
 
-        on("#messageSend","keydown",function(evt) {
-            if(evt.keyCode === 13) setText($("#messageSend").value);
+        var text = "Hello";
+        on(document,"keypress",function(evt) {
+            var ch = String.fromCharCode(evt.charCode);
+            if(evt.keyCode == 8 && text.length > 0) {
+                text = text.substring(0,text.length-1);
+            } else {
+                if(ch != "") text += ch;
+            }
+            setText(text);
         });
         on(document,'mousemove',function(evt) {
             var rect = evt.target.getBoundingClientRect();
-            var xy = { x: rect.left + evt.clientX, y: rect.top + evt.clientY};
+            var xy = { x: rect.left + evt.offsetX, y: rect.top + evt.offsetY};
             setPos(xy);
         });
 
